@@ -8,12 +8,12 @@ A topological space `X` is `n`-cconected space iff its homotopy group is trivial
 
 variable (X : Type*) [TopologicalSpace X]
 
-/-- A topological space `X` is `n`-cconected space iff its homotopy group is trivial up
+/-- A topological space `X` is `n`-connected space iff its homotopy group is trivial up
 to degree `n`. -/
 class NConnected (n : ℕ) : Prop where
   nonempty : Nonempty X
-  trivial_homotopy (x : X) {k : ℕ} (hk : k ≤ n) : Nonempty (HomotopyGroup.Pi k X x) ∧
-    Subsingleton (HomotopyGroup.Pi k X x)
+  trivial_homotopy (x : X) {k : ℕ} (hk : k ≤ n) : Subsingleton (HomotopyGroup.Pi k X x)
+/- drop nonempty-/
 
 namespace NConnected
 
@@ -27,15 +27,12 @@ theorem nConnected_zero_iff_pathConnectedSpace :
       let x := Classical.choice h₁
       let equiv_aux : (HomotopyGroup.Pi 0 X x) ≃ ZerothHomotopy X :=
         HomotopyGroup.pi0EquivZerothHomotopy
-      haveI : Subsingleton (HomotopyGroup.Pi 0 X x) := (h₂ x (Nat.zero_le 0)).2
+      haveI : Subsingleton (HomotopyGroup.Pi 0 X x) := (h₂ x (Nat.zero_le 0))
       exact ⟨Equiv.nonempty equiv_aux.symm, Equiv.subsingleton.symm equiv_aux⟩
     · intro ⟨h, h'⟩
       let x := Classical.choice ((nonempty_quotient_iff _).mp h)
-      constructor
-      · exact (nonempty_quotient_iff _).mp h
-      · intro x k hk
-        exact Nat.eq_zero_of_le_zero hk ▸ ⟨Equiv.nonempty HomotopyGroup.pi0EquivZerothHomotopy,
-          Equiv.subsingleton HomotopyGroup.pi0EquivZerothHomotopy⟩
+      exact ⟨(nonempty_quotient_iff _).mp h, fun _ _ hk => Nat.eq_zero_of_le_zero hk ▸
+        Equiv.subsingleton HomotopyGroup.pi0EquivZerothHomotopy⟩
   rw [pathConnectedSpace_iff_zerothHomotopy]
   exact iff_aux
 
@@ -52,7 +49,7 @@ theorem nConnected_one_iff_simplyConnectedSpace :
     constructor
     · exact (nConnected_zero_iff_pathConnectedSpace X).mp this
     · intro x y
-      haveI := (h.trivial_homotopy x (le_refl 1)).2
+      haveI := (h.trivial_homotopy x (le_refl 1))
       refine {allEq := ?_}
       intro p q
       by_contra hc
@@ -73,11 +70,8 @@ theorem nConnected_one_iff_simplyConnectedSpace :
       · rw [hk₀]
         rw [pathConnectedSpace_iff_zerothHomotopy] at path_connected_X
         obtain ⟨h₁, h₂⟩ := path_connected_X
-        exact ⟨Equiv.nonempty HomotopyGroup.pi0EquivZerothHomotopy,
-          Equiv.subsingleton HomotopyGroup.pi0EquivZerothHomotopy⟩
+        exact Equiv.subsingleton HomotopyGroup.pi0EquivZerothHomotopy
       · have hk₁ : k = 1 := by omega
         rw [hk₁]
-        constructor
-        · infer_instance
-        · haveI : Subsingleton (FundamentalGroup X x) := h' x x
-          exact Equiv.subsingleton (HomotopyGroup.pi1EquivFundamentalGroup)
+        haveI : Subsingleton (FundamentalGroup X x) := h' x x
+        exact Equiv.subsingleton (HomotopyGroup.pi1EquivFundamentalGroup)
