@@ -2,7 +2,7 @@
 
 ## In this repository
 
-This is a formalization project for $n$-connected spaces and $n$-connected maps, as a project for Bonn Lean Course WiSe 25/26. The code is contained in file `Basic.lean`.
+This is a formalization project for $n$-connected spaces and $n$-connected maps, as a project for Bonn Lean Course WiSe 25/26. The code is contained in file `Basic.lean` in the folder `NConnected`.
 
 In this project, we formalized the following topics:
 - $n$-connected spaces;
