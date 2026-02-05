@@ -1,3 +1,6 @@
+-- Project 2: n-connected spaces, n-connected maps.
+-- Author: Shuhan Wang, Wenrong Zou
+
 import Mathlib.Topology.Homotopy.HomotopyGroup
 import Mathlib.AlgebraicTopology.FundamentalGroupoid.SimplyConnected
 import Mathlib.Topology.Connected.PathConnected
