@@ -113,13 +113,7 @@ case, it will involve LES of fibration.
 
 
 def ZerothHomotopy.map (f : C(X, Y)) : ZerothHomotopy X → ZerothHomotopy Y :=
-by
-  refine Quotient.map (fun x : X => (f x)) ?_
-  intro a b hab
-  obtain ⟨ p ⟩ := hab
-  exact ⟨p.map f.continuous⟩
-
-
+  Quotient.map (fun x : X => (f x)) fun _ _ ⟨p⟩ => ⟨p.map f.continuous⟩
 
 /- Now we'd like to show that `f is 0-connected map` defined by us is equivalent to `π_0 f`
 surjective. -/
