@@ -17,8 +17,6 @@ to degree `n`. -/
 class NConnected (n : ℕ) : Prop where
   nonempty : Nonempty X
   trivial_homotopy (x : X) {k : ℕ} (hk : k ≤ n) : Subsingleton (HomotopyGroup.Pi k X x)
-/- drop nonempty-/
-
 
 /- the topological space is 0-connected iff it is connected. -/
 theorem nConnected_zero_iff_pathConnectedSpace :
@@ -93,7 +91,6 @@ def hFiber (f : C(X, Y)) (y : Y) : Type (max u v) :=
 instance (f : C(X, Y)) (y : Y) : TopologicalSpace (hFiber f y) := by
   unfold hFiber; infer_instance
 
-
 /-- `f` is `n`-connected if all homotopy fibers are `(n-1)`-connected spaces. -/
 def NConnectedMap (f : C(X, Y)) (n : ℕ) : Prop :=
   ∀ y : Y,
@@ -112,7 +109,6 @@ definition of `π_i f`, we need to first define it (we only check `n=0` case, as
 case, it will involve LES of fibration.
 -/
 
-
 def ZerothHomotopy.map (f : C(X, Y)) : ZerothHomotopy X → ZerothHomotopy Y :=
   Quotient.map (fun x : X => (f x)) fun _ _ ⟨p⟩ => ⟨p.map f.continuous⟩
 
@@ -120,21 +116,15 @@ def ZerothHomotopy.map (f : C(X, Y)) : ZerothHomotopy X → ZerothHomotopy Y :=
 surjective. -/
 
 theorem zeroConnected_surjective_ZH (f : C(X, Y))
-  (h0 : NConnectedMap f 0) :
-  Function.Surjective (ZerothHomotopy.map f) :=
-by
-   intro cy
-   refine Quotient.inductionOn cy ?_
-   intro y
-   obtain ⟨x, p⟩ := h0 y
-   refine ⟨Quotient.mk (pathSetoid X) x, ?_⟩
-   exact Quotient.sound ⟨p⟩
-
+    (h0 : NConnectedMap f 0) : Function.Surjective (ZerothHomotopy.map f) := by
+  intro cy
+  refine Quotient.inductionOn cy ?_
+  intro y
+  obtain ⟨x, p⟩ := h0 y
+  exact ⟨Quotient.mk (pathSetoid X) x, Quotient.sound ⟨p⟩⟩
 
 theorem surjective_ZH_zeroConnected (f : C(X, Y))
-  (hs : Function.Surjective (ZerothHomotopy.map f)) :
-  NConnectedMap f 0 :=
-by
+    (hs : Function.Surjective (ZerothHomotopy.map f)) : NConnectedMap f 0 := by
   intro y
   rcases hs (Quotient.mk _ y) with ⟨cx, hcxy⟩
   refine Quotient.inductionOn cx ?_ hcxy
@@ -148,13 +138,8 @@ by
 
 /-- `f` is 0-connected if and only if `π_0 f` is surjective -/
 theorem zeroConnected_iff_surjective_ZH (f : C(X, Y)) :
-  NConnectedMap f 0
-    ↔ Function.Surjective (ZerothHomotopy.map f) :=
-by
-  constructor
-  · intro h0; exact zeroConnected_surjective_ZH f h0
-  · intro hs; exact surjective_ZH_zeroConnected f hs
-
+    NConnectedMap f 0 ↔ Function.Surjective (ZerothHomotopy.map f) :=
+  ⟨zeroConnected_surjective_ZH f, surjective_ZH_zeroConnected f⟩
 
 namespace HomotopyGroup
 
@@ -163,46 +148,34 @@ open scoped Topology.Homotopy
 
 variable {X : Type*} [TopologicalSpace X] (x : X)
 
-
-
-
-
 lemma genLoopEquivOfUnique_transAt (p q : Ω^ (Fin 1) X x) :
-    genLoopEquivOfUnique (X := X) (x := x) (Fin 1)
-        (GenLoop.transAt (N := Fin 1) (X := X) (x := x) (0 : Fin 1) q p)
-      =
-    (genLoopEquivOfUnique (X := X) (x := x) (Fin 1) q).trans
-      (genLoopEquivOfUnique (X := X) (x := x) (Fin 1) p) := by
+    genLoopEquivOfUnique (Fin 1) (GenLoop.transAt (0) q p) =
+      (genLoopEquivOfUnique (Fin 1) q).trans (genLoopEquivOfUnique (Fin 1) p) := by
   ext t
-  simp [GenLoop.transAt, genLoopEquivOfUnique, GenLoop.copy, Path.trans]
+  simp only [genLoopEquivOfUnique, Fin.default_eq_zero, Fin.isValue, GenLoop.transAt, GenLoop.copy,
+    one_div, Equiv.coe_fn_mk, GenLoop.mk_apply, ContinuousMap.coe_mk, Path.coe_mk', Path.trans,
+    Function.comp_apply]
   have update_const_fin1 (t v : I) : Function.update (fun _ : Fin 1 => t) (0 : Fin 1) v
-  = (fun _ : Fin 1 => v) := by
+    = (fun _ : Fin 1 => v) := by
     ext j
     cases Unique.eq_default j
     simp [Function.update]
   simp [update_const_fin1]; rfl
 
-
-
-
 /-- `pi1EquivFundamentalGroup` has group isomorphism structure. -/
 def pi1MulEquivFundamentalGroup :
-    (π_ 1 X x) ≃* FundamentalGroup X x :=
-  { toEquiv := HomotopyGroup.pi1EquivFundamentalGroup (X := X) (x := x)
-    map_mul' := by
-     intro a b
-     refine Quotient.inductionOn₂ a b ?_
-     intro p q
-     simp only [HomotopyGroup.mul_spec (N := Fin 1) (X := X) (x := x) (i := (0 : Fin 1))]
-     apply Quotient.sound
-     simp [genLoopEquivOfUnique_transAt]
-     }
+    (π_ 1 X x) ≃* FundamentalGroup X x where
+  toEquiv := HomotopyGroup.pi1EquivFundamentalGroup (X := X) (x := x)
+  map_mul' a b := by
+    refine Quotient.inductionOn₂ a b fun p q => by
+      simp only [HomotopyGroup.mul_spec (i := (0 : Fin 1))]
+      apply Quotient.sound
+      simp [genLoopEquivOfUnique_transAt]
 
 /-- `pi1EquivFundamentalGroup` is a group isomorphism. -/
 theorem pi1EquivFundamentalGroup_isGroupIso :
     ∃ e : (π_ 1 X x) ≃* FundamentalGroup X x,
       e.toEquiv = HomotopyGroup.pi1EquivFundamentalGroup (X := X) (x := x) :=
-by
-  refine ⟨pi1MulEquivFundamentalGroup (X := X) (x := x), rfl⟩
+  ⟨pi1MulEquivFundamentalGroup (X := X) (x := x), rfl⟩
 
 end HomotopyGroup
