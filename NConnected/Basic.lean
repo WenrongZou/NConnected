@@ -4,6 +4,7 @@
 import Mathlib.Topology.Homotopy.HomotopyGroup
 import Mathlib.AlgebraicTopology.FundamentalGroupoid.SimplyConnected
 import Mathlib.Topology.Connected.PathConnected
+import Mathlib.Analysis.Complex.Circle
 
 /- In this file, define [n-connected space](https://ncatlab.org/nlab/show/n-connected+space).
 A topological space `X` is `n`-cconected space iff its homotopy group is trivial up to degree `n`.
@@ -153,3 +154,55 @@ by
   constructor
   · intro h0; exact zeroConnected_surjective_ZH f h0
   · intro hs; exact surjective_ZH_zeroConnected f hs
+
+
+namespace HomotopyGroup
+
+open scoped unitInterval Topology
+open scoped Topology.Homotopy
+
+variable {X : Type*} [TopologicalSpace X] (x : X)
+
+
+
+
+
+lemma genLoopEquivOfUnique_transAt (p q : Ω^ (Fin 1) X x) :
+    genLoopEquivOfUnique (X := X) (x := x) (Fin 1)
+        (GenLoop.transAt (N := Fin 1) (X := X) (x := x) (0 : Fin 1) q p)
+      =
+    (genLoopEquivOfUnique (X := X) (x := x) (Fin 1) q).trans
+      (genLoopEquivOfUnique (X := X) (x := x) (Fin 1) p) := by
+  ext t
+  simp [GenLoop.transAt, genLoopEquivOfUnique, GenLoop.copy, Path.trans]
+  have update_const_fin1 (t v : I) : Function.update (fun _ : Fin 1 => t) (0 : Fin 1) v
+  = (fun _ : Fin 1 => v) := by
+    ext j
+    cases Unique.eq_default j
+    simp [Function.update]
+  simp [update_const_fin1]; rfl
+
+
+
+
+/-- `pi1EquivFundamentalGroup` has group isomorphism structure. -/
+def pi1MulEquivFundamentalGroup :
+    (π_ 1 X x) ≃* FundamentalGroup X x :=
+  { toEquiv := HomotopyGroup.pi1EquivFundamentalGroup (X := X) (x := x)
+    map_mul' := by
+     intro a b
+     refine Quotient.inductionOn₂ a b ?_
+     intro p q
+     simp only [HomotopyGroup.mul_spec (N := Fin 1) (X := X) (x := x) (i := (0 : Fin 1))]
+     apply Quotient.sound
+     simp [genLoopEquivOfUnique_transAt]
+     }
+
+/-- `pi1EquivFundamentalGroup` is a group isomorphism. -/
+theorem pi1EquivFundamentalGroup_isGroupIso :
+    ∃ e : (π_ 1 X x) ≃* FundamentalGroup X x,
+      e.toEquiv = HomotopyGroup.pi1EquivFundamentalGroup (X := X) (x := x) :=
+by
+  refine ⟨pi1MulEquivFundamentalGroup (X := X) (x := x), rfl⟩
+
+end HomotopyGroup
