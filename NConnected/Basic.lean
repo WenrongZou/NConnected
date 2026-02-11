@@ -126,22 +126,16 @@ theorem zeroConnected_surjective_ZH (f : C(X, Y))
 theorem surjective_ZH_zeroConnected (f : C(X, Y))
     (hs : Function.Surjective (ZerothHomotopy.map f)) : NConnectedMap f 0 := by
   intro y
-  rcases hs (Quotient.mk _ y) with ⟨cx, hcxy⟩
+  obtain ⟨cx, hcxy⟩ := hs (Quotient.mk _ y)
   refine Quotient.inductionOn cx ?_ hcxy
   intro x hxy
-  have hj : Joined (f x) y := by
-    have : (Quotient.mk _ (f x) : ZerothHomotopy Y) = Quotient.mk _ y := by
-      simpa [ZerothHomotopy.map] using hxy
-    exact Quotient.exact this
-  rcases hj with ⟨p⟩
-  exact ⟨⟨x, p⟩⟩
+  have hj : Joined (f x) y := Quotient.exact <| by simpa [ZerothHomotopy.map] using hxy
+  exact ⟨⟨x, hj.somePath⟩⟩
 
 /-- `f` is 0-connected if and only if `π_0 f` is surjective -/
 theorem zeroConnected_iff_surjective_ZH (f : C(X, Y)) :
     NConnectedMap f 0 ↔ Function.Surjective (ZerothHomotopy.map f) :=
   ⟨zeroConnected_surjective_ZH f, surjective_ZH_zeroConnected f⟩
-
-
 
 open scoped unitInterval Topology
 open scoped Topology.Homotopy
@@ -156,11 +150,9 @@ lemma genLoopEquivOfUnique_transAt (p q : Ω^ (Fin 1) X x) :
     one_div, Equiv.coe_fn_mk, GenLoop.mk_apply, ContinuousMap.coe_mk, Path.coe_mk', Path.trans,
     Function.comp_apply]
   have update_const_fin1 (t v : I) : Function.update (fun _ : Fin 1 => t) (0 : Fin 1) v
-    = (fun _ : Fin 1 => v) := by
-    ext j
-    cases Unique.eq_default j
-    simp [Function.update]
-  simp [update_const_fin1]; rfl
+    = (fun _ : Fin 1 => v) := List.ofFn_inj.mp rfl
+  exact ite_congr rfl (fun a ↦ congrArg (⇑q) (update_const_fin1 t _))
+    fun a ↦ congrArg (⇑p) (update_const_fin1 t _)
 
 /-- `pi1EquivFundamentalGroup` has group isomorphism structure. -/
 def pi1MulEquivFundamentalGroup :
@@ -177,7 +169,6 @@ theorem pi1EquivFundamentalGroup_isGroupIso :
     ∃ e : (π_ 1 X x) ≃* FundamentalGroup X x,
       e.toEquiv = HomotopyGroup.pi1EquivFundamentalGroup (X := X) (x := x) :=
   ⟨pi1MulEquivFundamentalGroup (X := X) (x := x), rfl⟩
-
 
 variable {M N : Type*}
 namespace Cube
