@@ -141,7 +141,7 @@ theorem zeroConnected_iff_surjective_ZH (f : C(X, Y)) :
     NConnectedMap f 0 ↔ Function.Surjective (ZerothHomotopy.map f) :=
   ⟨zeroConnected_surjective_ZH f, surjective_ZH_zeroConnected f⟩
 
-namespace HomotopyGroup
+
 
 open scoped unitInterval Topology
 open scoped Topology.Homotopy
@@ -178,4 +178,80 @@ theorem pi1EquivFundamentalGroup_isGroupIso :
       e.toEquiv = HomotopyGroup.pi1EquivFundamentalGroup (X := X) (x := x) :=
   ⟨pi1MulEquivFundamentalGroup (X := X) (x := x), rfl⟩
 
-end HomotopyGroup
+
+variable {M N : Type*}
+namespace Cube
+
+/-- Homeomorphism `I^(M ⊕ N) ≃ₜ I^M × I^N`. -/
+def sumHomeo (M N : Type*) : (I^(Sum M N)) ≃ₜ ((I^M) × (I^N)) where
+  toFun y := (fun m ↦ y (Sum.inl m), fun n ↦ y (Sum.inr n))
+  invFun y := fun s ↦ Sum.casesOn s y.1 y.2
+  left_inv y := by
+    ext s; cases s <;> rfl
+  right_inv y := by
+    ext s <;> rfl
+  continuous_toFun := by
+    fun_prop
+  continuous_invFun := by
+    refine continuous_pi ?_
+    intro s
+    cases s with
+    | inl m =>
+        simpa using (continuous_apply m).comp continuous_fst
+    | inr n =>
+        simpa using (continuous_apply n).comp continuous_snd
+
+theorem boundary_sum_iff (M N : Type*) (y : I^(Sum M N)) :
+    y ∈ boundary (Sum M N) ↔ (y ∘ Sum.inl : I^M) ∈ boundary M ∨
+  (y ∘ Sum.inr : I^N) ∈ boundary N := by
+  constructor
+  · intro i
+    obtain ⟨i, hi⟩ := i
+    cases i with
+    | inl m =>
+        left
+        refine ⟨m, ?_⟩
+        simpa using hi
+    | inr n =>
+        right
+        refine ⟨n, ?_⟩
+        simpa using hi
+  · rintro (hM | hN)
+    · rcases hM with ⟨m, hm⟩
+      exact ⟨Sum.inl m, by simpa using hm⟩
+    · rcases hN with ⟨n, hn⟩
+      exact ⟨Sum.inr n, by simpa using hn⟩
+end Cube
+
+namespace GenLoop
+
+/-- `Ω^M (Ω^N X) ≃ₜ Ω^(M ⊕ N) X`. -/
+def iterHomeoSum :
+    Ω^ M (Ω^ N X x) (GenLoop.const (N := N) (X := X) (x := x)) ≃ₜ Ω^ (Sum M N) X x := sorry
+
+/-- Homeomorphism `Ω^M X ≃ₜ Ω^N X` if `M ≃ N`. -/
+def congrHomeo {M N : Type*} (e : M ≃ N) : Ω^ M X x ≃ₜ Ω^ N X x where
+  toFun p := by
+    let h : (I^N) → I^M := fun t m ↦ t (e m)
+    have hc : Continuous h := by fun_prop
+    let hc' : C(I^N, I^M) := ⟨h, hc⟩
+    refine ⟨p.1.comp hc', ?_⟩
+    intro y hy
+    rcases hy with ⟨n, hn⟩
+    have : (fun m ↦ y (e m)) ∈ Cube.boundary M := ⟨e.symm n, by simpa using hn⟩
+    simpa [hc', h] using p.2 _ this
+  invFun p := by
+    let h : (I^M) → I^N := fun t n ↦ t (e.symm n)
+    have hc : Continuous h := by fun_prop
+    let hc' : C(I^M, I^N) := ⟨h, hc⟩
+    refine ⟨p.1.comp hc', ?_⟩
+    intro y hy
+    rcases hy with ⟨m, hm⟩
+    have : (fun n ↦ y (e.symm n)) ∈ Cube.boundary N := ⟨e m, by simpa using hm⟩
+    simpa [hc', h] using p.2 _ this
+  left_inv p := by ext t; simp; rfl
+  right_inv p := by ext t; simp; rfl
+  continuous_toFun := by fun_prop
+  continuous_invFun := by fun_prop
+
+end GenLoop
