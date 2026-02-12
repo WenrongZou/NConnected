@@ -12,7 +12,7 @@ In this project, we formalized the following topics:
 - 0-connected map is equivalent to induced map on 0-th homotopy groups being surjective.
 
 
-- $\Omega^M (\Omega^N X) \simeq \Omega^(M\oplus N) X$, and $\Omega^M X\simeq \Omega^N X$ when $M\simeq N$;
+- $\Omega^M (\Omega^N X) \simeq \Omega^{M\oplus N} X$, and $\Omega^M X\simeq \Omega^N X$ when $M\simeq N$;
 - Show that `HomotopyGroup.pi1EquivFundamentalGroup` is a group isomorphism;
 - Define the induced group homomorphism of continuous maps on homotopy groups.
 
