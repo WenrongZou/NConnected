@@ -174,27 +174,18 @@ variable {M N : Type*}
 
 namespace GenLoop
 
+open Cube
+
 /-- Homeomorphism `Ω^M X ≃ₜ Ω^N X` if `M ≃ N`. -/
 def congrHomeo {M N : Type*} (e : M ≃ N) : Ω^ M X x ≃ₜ Ω^ N X x where
   toFun p := ⟨p.1.comp ⟨fun t m ↦ t (e m), by fun_prop⟩, fun y ⟨n, hn⟩ =>
     by simpa using p.2 _ ⟨e.symm n, by simpa using hn⟩⟩
-  invFun p := by
-    let h : (I^M) → I^N := fun t n ↦ t (e.symm n)
-    have hc : Continuous h := by fun_prop
-    let hc' : C(I^M, I^N) := ⟨h, hc⟩
-    refine ⟨p.1.comp hc', ?_⟩
-    intro y hy
-    rcases hy with ⟨m, hm⟩
-    have : (fun n ↦ y (e.symm n)) ∈ Cube.boundary N := ⟨e m, by simpa using hm⟩
-    simpa [hc', h] using p.2 _ this
+  invFun p := ⟨p.1.comp ⟨fun t n ↦ t (e.symm n), by fun_prop⟩, fun y ⟨m, hm⟩ => by
+    simpa using p.2 _ ⟨e m, by simpa using hm⟩ ⟩
   left_inv p := by ext t; simp; rfl
   right_inv p := by ext t; simp; rfl
   continuous_toFun := by fun_prop
   continuous_invFun := by fun_prop
-
-end GenLoop
-
-namespace Cube
 
 /-- Homeomorphism `I^(M ⊕ N) ≃ₜ I^M × I^N`. -/
 def sumHomeo (M N : Type*) : (I^(Sum M N)) ≃ₜ ((I^M) × (I^N)) where
@@ -211,30 +202,37 @@ def sumHomeo (M N : Type*) : (I^(Sum M N)) ≃ₜ ((I^M) × (I^N)) where
     intro s
     cases s with
     | inl m =>
-        simpa using (continuous_apply m).comp continuous_fst
+      simpa using (continuous_apply m).comp continuous_fst
     | inr n =>
-        simpa using (continuous_apply n).comp continuous_snd
+      simpa using (continuous_apply n).comp continuous_snd
 
 theorem boundary_sum_iff (M N : Type*) (y : I^(Sum M N)) :
-    y ∈ boundary (Sum M N) ↔ (y ∘ Sum.inl : I^M) ∈ boundary M ∨
-  (y ∘ Sum.inr : I^N) ∈ boundary N := by
+    y ∈ Cube.boundary (Sum M N) ↔ (y ∘ Sum.inl : I^M) ∈ Cube.boundary M ∨
+  (y ∘ Sum.inr : I^N) ∈ Cube.boundary N := by
   constructor
   · intro i
     obtain ⟨i, hi⟩ := i
     cases i with
     | inl m =>
-        left
-        refine ⟨m, ?_⟩
-        simpa using hi
+      left
+      refine ⟨m, ?_⟩
+      simpa using hi
     | inr n =>
-        right
-        refine ⟨n, ?_⟩
-        simpa using hi
+      right
+      refine ⟨n, ?_⟩
+      simpa using hi
   · rintro (hM | hN)
     · rcases hM with ⟨m, hm⟩
       exact ⟨Sum.inl m, by simpa using hm⟩
     · rcases hN with ⟨n, hn⟩
       exact ⟨Sum.inr n, by simpa using hn⟩
+
+@[simps]
+def currySum (q : ↑(Ω^ (M ⊕ N) X x)) : C(M → ↑I, (↑(Ω^ N X x))) where
+  toFun a := ⟨(q.1.comp ⟨(sumHomeo M N).invFun, (sumHomeo M N).continuous_invFun⟩).curry.toFun a,
+    fun _ hm => q.2 _ ((boundary_sum_iff _ _ _).mpr (Or.inr hm))⟩
+  continuous_toFun := Continuous.subtype_mk (q.1.comp
+    ⟨(sumHomeo M N).invFun, (sumHomeo M N).continuous_invFun⟩).curry.continuous_toFun _
 
 /-- `Ω^M (Ω^N X) ≃ₜ Ω^(M ⊕ N) X`. -/
 def iterHomeoSum :
@@ -243,17 +241,16 @@ def iterHomeoSum :
     -- p is a map I^M → (I^N → X). We turn it into I^M × I^N → X, then I^(M ⊕ N) → X.
     let p_uncurry := ContinuousMap.uncurry ⟨fun a => ⟨(p.1 a).1, ContinuousMap.continuous _⟩,
       Continuous.subtype_val (map_continuous p)⟩
-    let f := p_uncurry.comp ⟨(sumHomeo M N).toFun, (sumHomeo M N).continuous_toFun⟩
-    refine ⟨f, ?_⟩
+    refine ⟨p_uncurry.comp ⟨(sumHomeo M N).toFun, (sumHomeo M N).continuous_toFun⟩, ?_⟩
     intro y hy
     rw [boundary_sum_iff] at hy
     rcases hy with hM | hN
     · -- Case: y restricted to M is in the boundary of I^M
       -- p maps boundary of M to the constant loop (const x)
-      simp [sumHomeo, GenLoop.const, f, p_uncurry, p.2 (y ∘ Sum.inl) hM]
+      simp [sumHomeo, GenLoop.const, p_uncurry, p.2 (y ∘ Sum.inl) hM]
     · -- Case: y restricted to N is in the boundary of I^N
       -- p(m) is always a loop, so it maps boundary of N to x
-      simp [sumHomeo, f, p_uncurry, (p.1 (y ∘ Sum.inl)).2 (y ∘ Sum.inr) hN]
+      simp [sumHomeo, p_uncurry, (p.1 (y ∘ Sum.inl)).2 (y ∘ Sum.inr) hN]
   invFun q := by
     let q_prod := q.1.comp ⟨(sumHomeo M N).invFun, (sumHomeo M N).continuous_invFun⟩
     let f : C(M → ↑I, (↑(Ω^ N X x))) := {
@@ -261,7 +258,7 @@ def iterHomeoSum :
         q.2 _ ((boundary_sum_iff _ _ _).mpr (Or.inr hm))⟩
       continuous_toFun := Continuous.subtype_mk q_prod.curry.continuous_toFun _
     }
-    refine ⟨f, ?_⟩
+    refine ⟨currySum x q, ?_⟩
     intro m hm
     ext n
     exact q.2 _ ((boundary_sum_iff _ _ _).mpr (Or.inl hm))
@@ -274,16 +271,16 @@ def iterHomeoSum :
     simp [Function.uncurry]
     rfl
   continuous_toFun := by
-    simp only [Equiv.toFun_as_coe, Homeomorph.coe_toEquiv]
     apply Continuous.subtype_mk
     refine Continuous.compCM ?_ continuous_const
     refine Continuous.comp' ContinuousMap.continuous_uncurry ?_
-    /- I think this is just a coercion? But why fun_prop cannot solve this?-/
+    /- I think this is just a coercion? But why fun_prop cannot solve this?
+      Oh, it is underlying topology problem. -/
     sorry
   continuous_invFun := by
-    simp only [Equiv.invFun_as_coe, Homeomorph.coe_symm_toEquiv, ContinuousMap.toFun_eq_coe]
+    simp only
     apply Continuous.subtype_mk
     /- same as above-/
     sorry
 
-end Cube
+end GenLoop
