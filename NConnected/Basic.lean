@@ -252,12 +252,6 @@ def iterHomeoSum :
       -- p(m) is always a loop, so it maps boundary of N to x
       simp [sumHomeo, p_uncurry, (p.1 (y ∘ Sum.inl)).2 (y ∘ Sum.inr) hN]
   invFun q := by
-    let q_prod := q.1.comp ⟨(sumHomeo M N).invFun, (sumHomeo M N).continuous_invFun⟩
-    let f : C(M → ↑I, (↑(Ω^ N X x))) := {
-      toFun a := ⟨q_prod.curry.toFun a, fun m hm =>
-        q.2 _ ((boundary_sum_iff _ _ _).mpr (Or.inr hm))⟩
-      continuous_toFun := Continuous.subtype_mk q_prod.curry.continuous_toFun _
-    }
     refine ⟨currySum x q, ?_⟩
     intro m hm
     ext n
@@ -278,7 +272,7 @@ def iterHomeoSum :
       Oh, it is underlying topology problem. -/
     sorry
   continuous_invFun := by
-    simp only
+
     apply Continuous.subtype_mk
     /- same as above-/
     sorry
