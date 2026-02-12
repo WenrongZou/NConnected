@@ -234,6 +234,10 @@ def currySum (q : ↑(Ω^ (M ⊕ N) X x)) : C(M → ↑I, (↑(Ω^ N X x))) wher
   continuous_toFun := Continuous.subtype_mk (q.1.comp
     ⟨(sumHomeo M N).invFun, (sumHomeo M N).continuous_invFun⟩).curry.continuous_toFun _
 
+lemma continuous_currySum : Continuous (currySum x (M := M) (N := N)) := by
+
+  sorry
+
 /-- `Ω^M (Ω^N X) ≃ₜ Ω^(M ⊕ N) X`. -/
 def iterHomeoSum :
     Ω^ M (Ω^ N X x) (GenLoop.const (N := N) (X := X) (x := x)) ≃ₜ Ω^ (Sum M N) X x where
@@ -271,10 +275,7 @@ def iterHomeoSum :
     /- I think this is just a coercion? But why fun_prop cannot solve this?
       Oh, it is underlying topology problem. -/
     sorry
-  continuous_invFun := by
+  continuous_invFun := Continuous.subtype_mk (continuous_currySum x) _
 
-    apply Continuous.subtype_mk
-    /- same as above-/
-    sorry
 
 end GenLoop
