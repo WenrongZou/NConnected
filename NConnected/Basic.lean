@@ -278,7 +278,7 @@ def iterHomeoSum :
     apply Continuous.subtype_mk
     refine Continuous.compCM ?_ continuous_const
     refine Continuous.comp' ContinuousMap.continuous_uncurry ?_
-    /- I think this is just a coesion? But why fun_prop cannot solve this?-/
+    /- I think this is just a coercion? But why fun_prop cannot solve this?-/
     sorry
   continuous_invFun := by
     simp only [Equiv.invFun_as_coe, Homeomorph.coe_symm_toEquiv, ContinuousMap.toFun_eq_coe]
