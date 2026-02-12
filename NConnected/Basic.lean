@@ -137,6 +137,9 @@ theorem zeroConnected_iff_surjective_ZH (f : C(X, Y)) :
     NConnectedMap f 0 ↔ Function.Surjective (ZerothHomotopy.map f) :=
   ⟨zeroConnected_surjective_ZH f, surjective_ZH_zeroConnected f⟩
 
+
+-- ## Solving TODO's: Show that `HomotopyGroup.pi1EquivFundamentalGroup` is a group isomorphism.
+
 open scoped unitInterval Topology
 open scoped Topology.Homotopy
 
@@ -175,6 +178,8 @@ variable {M N : Type*}
 namespace GenLoop
 
 open Cube
+
+-- ## Solving TODO's: `Ω^M (Ω^N X) ≃ₜ Ω^(M⊕N) X`, and `Ω^M X ≃ₜ Ω^N X` when `M ≃ N`.
 
 /-- Homeomorphism `Ω^M X ≃ₜ Ω^N X` if `M ≃ N`. -/
 def congrHomeo {M N : Type*} (e : M ≃ N) : Ω^ M X x ≃ₜ Ω^ N X x where
@@ -279,3 +284,121 @@ def iterHomeoSum :
 
 
 end GenLoop
+
+-- ## Induced homomorphism of Continuous map on homotopy groups
+
+-- Induced map of continuous map on generalized loop
+
+namespace GenLoop
+open scoped unitInterval Topology
+open Topology.Homotopy
+
+variable {X Y Z : Type*}
+variable [TopologicalSpace X] [TopologicalSpace Y] [TopologicalSpace Z]
+
+/-- Post-compose a generalized loop `Ω^ N` at `x` with a continuous map `f: C(X,Y)`. -/
+def inducedMap (N : Type*) (x : X) (f : C(X, Y)) (p : Ω^ N X x) : Ω^ N Y (f x) :=
+  ⟨f.comp p.1, by
+    intro y hy
+    simp [ContinuousMap.comp_apply, p.2 y hy]
+  ⟩
+
+@[simp] theorem inducedMap_apply {N : Type*} {x : X} (f : C(X, Y)) (p : Ω^ N X x) (y : I^N) :
+    inducedMap N x f p y = f (p y) :=
+  rfl
+
+/-- `GenLoop.Homotopic` is preserved by post-composition. -/
+theorem homotopic_map (N : Type*) (x : X) (f : C(X, Y)) {p q : Ω^ N X x} (H : Homotopic p q) :
+    Homotopic (inducedMap N x f p) (inducedMap N x f q) := by
+  simp only [Homotopic, inducedMap]
+  have H' : (↑p : C(I^N, X)).HomotopicRel (↑q : C(I^N, X)) (Cube.boundary N) := by
+    simpa [Homotopic] using H
+  exact ContinuousMap.HomotopicRel.comp_continuousMap H' f
+
+/-- Post-compose with identity map gives identity. -/
+theorem inducedMap_id (N : Type*) (x : X) (p : Ω^ N X x) :
+    inducedMap N x (ContinuousMap.id X) p = p := by
+  ext y; rfl
+
+/-- Post-composition is compatible with composition of continuous maps. -/
+theorem inducedMap_comp (N : Type*) (x : X) (g : C(Y, Z)) (f : C(X, Y)) (p : Ω^ N X x) :
+    inducedMap N x (g.comp f) p =
+    inducedMap N (f x) g (inducedMap N x f p) := by
+  ext y; rfl
+
+/-- Post-compose commutes with concatenation `transAt`. -/
+theorem inducedMap_transAt (N : Type*) (x : X) (f : C(X, Y)) (i : N) (p q : Ω^ N X x)
+[DecidableEq N] :
+    inducedMap N x f (transAt i p q)
+      = transAt i (inducedMap N x f p) (inducedMap N x f q) := by
+  ext t
+  simp [inducedMap, transAt, ContinuousMap.comp_apply, copy]
+  split_ifs <;> rfl
+
+end GenLoop
+
+
+-- Induced map of continuous map on homotopy groups
+
+namespace HomotopyGroup
+
+variable {X Y Z : Type*}
+variable [TopologicalSpace X] [TopologicalSpace Y] [TopologicalSpace Z]
+
+
+/-- The map on `N`-th homotopy groups based at `x` induced by a continuous map `f : X → Y`. -/
+def inducedMap (N : Type*) (x : X) (f : C(X, Y)) :
+    HomotopyGroup N X x → HomotopyGroup N Y (f x) :=
+  Quotient.map (GenLoop.inducedMap N x f) (by
+    intro p q H
+    have H' : (p.1).HomotopicRel (q.1) (Cube.boundary N) := by
+      simpa [GenLoop.Homotopic] using H
+    simp only [GenLoop.inducedMap]
+    change (f.comp (↑p : C(I^N, X))).HomotopicRel (f.comp (↑q : C(I^N, X))) (Cube.boundary N)
+    exact ContinuousMap.HomotopicRel.comp_continuousMap H' f)
+
+@[simp] theorem inducedMap_mk (N : Type*) (x : X) (f : C(X, Y)) (p : Ω^ N X x) :
+    inducedMap N x f ⟦p⟧ = ⟦GenLoop.inducedMap N x f p⟧ :=
+  rfl
+
+lemma inducedMap_id (N : Type*) (x : X) :
+    inducedMap N x (ContinuousMap.id X)
+      = (id : HomotopyGroup N X x → HomotopyGroup N X x) := by
+  ext a
+  refine Quotient.inductionOn a ?_
+  intro p
+  simp [inducedMap, GenLoop.inducedMap, ContinuousMap.id_comp]
+
+lemma inducedMap_comp (N : Type*) (x : X) (f : C(X, Y)) (g : C(Y, Z)) :
+  inducedMap N x (g.comp f)
+    = (inducedMap N (f x) g) ∘ (inducedMap N x f)
+  := by
+  ext a
+  refine Quotient.inductionOn a ?_
+  intro p
+  simp [inducedMap, GenLoop.inducedMap, ContinuousMap.comp_assoc]
+
+-- Now we'd like to show that `inducedMap f` on homotopy groups is indeed group homomorphism.
+
+/-- The group homomorphism on `n`-th homotopy groups based at `x` induced by
+ a continuous map `f : X → Y`. -/
+def inducedHom (n : ℕ) (x : X) (f : C(X, Y)) :
+    HomotopyGroup (Fin (n + 1)) X x →*
+      HomotopyGroup (Fin (n + 1)) Y (f x) :=
+  { toFun := inducedMap (N := Fin (n + 1)) (x := x) f
+    map_one' := by
+      have hconst :
+          GenLoop.inducedMap (Fin (n + 1)) x f
+              (GenLoop.const (N := Fin (n + 1)) (X := X) (x := x))
+          = (GenLoop.const (N := Fin (n + 1)) (X := Y) (x := f x)) := by ext t; rfl
+      simp [HomotopyGroup.one_def, HomotopyGroup.inducedMap_mk, hconst]
+
+    map_mul' := by
+      intro a b
+      refine Quotient.inductionOn₂ a b ?_
+      intro p q
+      let i : Fin (n + 1) := Classical.arbitrary _
+      simp [HomotopyGroup.mul_spec (i := i), GenLoop.inducedMap_transAt]
+  }
+
+end HomotopyGroup
