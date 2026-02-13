@@ -277,14 +277,11 @@ def iterHomeoSum :
     ext t
     simp [Function.uncurry]
     rfl
-  continuous_toFun := by
-    apply Continuous.subtype_mk
-    refine Continuous.compCM ?_ continuous_const
-    refine Continuous.comp' ContinuousMap.continuous_uncurry ?_
-    exact (ContinuousMap.continuous_postcomp ⟨_, continuous_subtype_val⟩).comp
-      continuous_subtype_val
+  continuous_toFun :=
+    ((ContinuousMap.continuous_uncurry.comp' ((ContinuousMap.continuous_postcomp
+      ⟨_, continuous_subtype_val⟩).comp continuous_subtype_val)).compCM
+        continuous_const).subtype_mk _
   continuous_invFun := Continuous.subtype_mk (continuous_currySum_apply x) _
-
 
 end GenLoop
 
@@ -301,12 +298,10 @@ variable [TopologicalSpace X] [TopologicalSpace Y] [TopologicalSpace Z]
 
 /-- Post-compose a generalized loop `Ω^ N` at `x` with a continuous map `f: C(X,Y)`. -/
 def inducedMap (N : Type*) (x : X) (f : C(X, Y)) (p : Ω^ N X x) : Ω^ N Y (f x) :=
-  ⟨f.comp p.1, by
-    intro y hy
-    simp [ContinuousMap.comp_apply, p.2 y hy]
-  ⟩
+  ⟨f.comp p.1, fun y hy => by simp [ContinuousMap.comp_apply, p.2 y hy]⟩
 
-@[simp] theorem inducedMap_apply {N : Type*} {x : X} (f : C(X, Y)) (p : Ω^ N X x) (y : I^N) :
+@[simp]
+theorem inducedMap_apply {N : Type*} {x : X} (f : C(X, Y)) (p : Ω^ N X x) (y : I^N) :
     inducedMap N x f p y = f (p y) :=
   rfl
 
@@ -331,8 +326,7 @@ theorem inducedMap_comp (N : Type*) (x : X) (g : C(Y, Z)) (f : C(X, Y)) (p : Ω^
 
 /-- Post-compose commutes with concatenation `transAt`. -/
 theorem inducedMap_transAt (N : Type*) (x : X) (f : C(X, Y)) (i : N) (p q : Ω^ N X x)
-[DecidableEq N] :
-    inducedMap N x f (transAt i p q)
+    [DecidableEq N] : inducedMap N x f (transAt i p q)
       = transAt i (inducedMap N x f p) (inducedMap N x f q) := by
   ext t
   simp [inducedMap, transAt, ContinuousMap.comp_apply, copy]
@@ -359,26 +353,19 @@ def inducedMap (N : Type*) (x : X) (f : C(X, Y)) :
     change (f.comp (↑p : C(I^N, X))).HomotopicRel (f.comp (↑q : C(I^N, X))) (Cube.boundary N)
     exact ContinuousMap.HomotopicRel.comp_continuousMap H' f)
 
-@[simp] theorem inducedMap_mk (N : Type*) (x : X) (f : C(X, Y)) (p : Ω^ N X x) :
-    inducedMap N x f ⟦p⟧ = ⟦GenLoop.inducedMap N x f p⟧ :=
-  rfl
+@[simp]
+theorem inducedMap_mk (N : Type*) (x : X) (f : C(X, Y)) (p : Ω^ N X x) :
+    inducedMap N x f ⟦p⟧ = ⟦GenLoop.inducedMap N x f p⟧ := rfl
 
 lemma inducedMap_id (N : Type*) (x : X) :
-    inducedMap N x (ContinuousMap.id X)
-      = (id : HomotopyGroup N X x → HomotopyGroup N X x) := by
+    inducedMap N x (ContinuousMap.id X) = id := by
   ext a
-  refine Quotient.inductionOn a ?_
-  intro p
-  simp [inducedMap, GenLoop.inducedMap, ContinuousMap.id_comp]
+  refine Quotient.inductionOn a fun p => by rfl
 
 lemma inducedMap_comp (N : Type*) (x : X) (f : C(X, Y)) (g : C(Y, Z)) :
-  inducedMap N x (g.comp f)
-    = (inducedMap N (f x) g) ∘ (inducedMap N x f)
-  := by
+    inducedMap N x (g.comp f) = (inducedMap N (f x) g) ∘ (inducedMap N x f) := by
   ext a
-  refine Quotient.inductionOn a ?_
-  intro p
-  simp [inducedMap, GenLoop.inducedMap, ContinuousMap.comp_assoc]
+  refine Quotient.inductionOn a fun p => by rfl
 
 -- Now we'd like to show that `inducedMap f` on homotopy groups is indeed group homomorphism.
 
@@ -386,21 +373,15 @@ lemma inducedMap_comp (N : Type*) (x : X) (f : C(X, Y)) (g : C(Y, Z)) :
  a continuous map `f : X → Y`. -/
 def inducedHom (n : ℕ) (x : X) (f : C(X, Y)) :
     HomotopyGroup (Fin (n + 1)) X x →*
-      HomotopyGroup (Fin (n + 1)) Y (f x) :=
-  { toFun := inducedMap (N := Fin (n + 1)) (x := x) f
-    map_one' := by
-      have hconst :
-          GenLoop.inducedMap (Fin (n + 1)) x f
-              (GenLoop.const (N := Fin (n + 1)) (X := X) (x := x))
-          = (GenLoop.const (N := Fin (n + 1)) (X := Y) (x := f x)) := by ext t; rfl
-      simp [HomotopyGroup.one_def, HomotopyGroup.inducedMap_mk, hconst]
+      HomotopyGroup (Fin (n + 1)) Y (f x) where
+  toFun := inducedMap (N := Fin (n + 1)) (x := x) f
+  map_one' := by
+    have hconst : GenLoop.inducedMap (Fin (n + 1)) x f GenLoop.const
+      = GenLoop.const := by ext t; rfl
+    simp [HomotopyGroup.one_def, HomotopyGroup.inducedMap_mk, hconst]
+  map_mul' a b :=
+    Quotient.inductionOn₂ a b fun p q => by
+      simp [HomotopyGroup.mul_spec (i := Classical.arbitrary _), GenLoop.inducedMap_transAt]
 
-    map_mul' := by
-      intro a b
-      refine Quotient.inductionOn₂ a b ?_
-      intro p q
-      let i : Fin (n + 1) := Classical.arbitrary _
-      simp [HomotopyGroup.mul_spec (i := i), GenLoop.inducedMap_transAt]
-  }
 
 end HomotopyGroup
