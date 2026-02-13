@@ -239,8 +239,12 @@ def currySum (q : ↑(Ω^ (M ⊕ N) X x)) : C(M → ↑I, (↑(Ω^ N X x))) wher
   continuous_toFun := Continuous.subtype_mk (q.1.comp
     ⟨(sumHomeo M N).invFun, (sumHomeo M N).continuous_invFun⟩).curry.continuous_toFun _
 
-lemma continuous_currySum : Continuous (currySum x (M := M) (N := N)) := by
+lemma continuous_currySum (q : ↑(Ω^ (M ⊕ N) X x)) : Continuous (currySum x q) :=
+  ContinuousMap.continuous (currySum x q)
 
+lemma continuous_currySum_apply : Continuous (currySum x (M := M) (N := N)) := by
+  unfold currySum
+  simp only [Equiv.invFun_as_coe, Homeomorph.coe_symm_toEquiv, ContinuousMap.toFun_eq_coe]
   sorry
 
 /-- `Ω^M (Ω^N X) ≃ₜ Ω^(M ⊕ N) X`. -/
@@ -277,10 +281,9 @@ def iterHomeoSum :
     apply Continuous.subtype_mk
     refine Continuous.compCM ?_ continuous_const
     refine Continuous.comp' ContinuousMap.continuous_uncurry ?_
-    /- I think this is just a coercion? But why fun_prop cannot solve this?
-      Oh, it is underlying topology problem. -/
-    sorry
-  continuous_invFun := Continuous.subtype_mk (continuous_currySum x) _
+    exact (ContinuousMap.continuous_postcomp ⟨_, continuous_subtype_val⟩).comp
+      continuous_subtype_val
+  continuous_invFun := Continuous.subtype_mk (continuous_currySum_apply x) _
 
 
 end GenLoop
@@ -336,7 +339,6 @@ theorem inducedMap_transAt (N : Type*) (x : X) (f : C(X, Y)) (i : N) (p q : Ω^ 
   split_ifs <;> rfl
 
 end GenLoop
-
 
 -- Induced map of continuous map on homotopy groups
 
