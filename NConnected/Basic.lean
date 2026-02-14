@@ -242,10 +242,9 @@ def currySum (q : ↑(Ω^ (M ⊕ N) X x)) : C(M → ↑I, (↑(Ω^ N X x))) wher
 lemma continuous_currySum (q : ↑(Ω^ (M ⊕ N) X x)) : Continuous (currySum x q) :=
   ContinuousMap.continuous (currySum x q)
 
-lemma continuous_currySum_apply : Continuous (currySum x (M := M) (N := N)) := by
-  unfold currySum
-  simp only [Equiv.invFun_as_coe, Homeomorph.coe_symm_toEquiv, ContinuousMap.toFun_eq_coe]
-  sorry
+lemma continuous_currySum_apply : Continuous (currySum x (M := M) (N := N)) :=
+  ContinuousMap.continuous_of_continuous_uncurry _ <| Continuous.subtype_mk
+    (ContinuousMap.continuous_of_continuous_uncurry _ (by dsimp; fun_prop)) _
 
 /-- `Ω^M (Ω^N X) ≃ₜ Ω^(M ⊕ N) X`. -/
 def iterHomeoSum :
