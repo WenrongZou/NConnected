@@ -182,7 +182,7 @@ open Cube
 -- ## Solving TODO's: `Ω^M (Ω^N X) ≃ₜ Ω^(M⊕N) X`, and `Ω^M X ≃ₜ Ω^N X` when `M ≃ N`.
 
 /-- Homeomorphism `Ω^M X ≃ₜ Ω^N X` if `M ≃ N`. -/
-def congrHomeo {M N : Type*} (e : M ≃ N) : Ω^ M X x ≃ₜ Ω^ N X x where
+def congr {M N : Type*} (e : M ≃ N) : Ω^ M X x ≃ₜ Ω^ N X x where
   toFun p := ⟨p.1.comp ⟨fun t m ↦ t (e m), by fun_prop⟩, fun y ⟨n, hn⟩ =>
     by simpa using p.2 _ ⟨e.symm n, by simpa using hn⟩⟩
   invFun p := ⟨p.1.comp ⟨fun t n ↦ t (e.symm n), by fun_prop⟩, fun y ⟨m, hm⟩ => by
@@ -192,16 +192,15 @@ def congrHomeo {M N : Type*} (e : M ≃ N) : Ω^ M X x ≃ₜ Ω^ N X x where
   continuous_toFun := by fun_prop
   continuous_invFun := by fun_prop
 
+#check Homeomorph.sumArrowHomeomorphProdArrow
+
 /-- Homeomorphism `I^(M ⊕ N) ≃ₜ I^M × I^N`. -/
 def sumHomeo (M N : Type*) : (I^(Sum M N)) ≃ₜ ((I^M) × (I^N)) where
   toFun y := (y ∘ Sum.inl, y ∘ Sum.inr)
   invFun y := fun s ↦ Sum.casesOn s y.1 y.2
-  left_inv y := by
-    ext s; cases s <;> rfl
-  right_inv y := by
-    ext s <;> rfl
-  continuous_toFun := by
-    fun_prop
+  left_inv y := by ext s; cases s <;> rfl
+  right_inv y := by ext s <;> rfl
+  continuous_toFun := by fun_prop
   continuous_invFun := by
     refine continuous_pi ?_
     intro s
@@ -297,7 +296,7 @@ variable [TopologicalSpace X] [TopologicalSpace Y] [TopologicalSpace Z]
 
 /-- Post-compose a generalized loop `Ω^ N` at `x` with a continuous map `f: C(X,Y)`. -/
 def inducedMap (N : Type*) (x : X) (f : C(X, Y)) (p : Ω^ N X x) : Ω^ N Y (f x) :=
-  ⟨f.comp p.1, fun y hy => by simp [ContinuousMap.comp_apply, p.2 y hy]⟩
+  ⟨f.comp p.1, fun y hy => by rw [ContinuousMap.comp_apply, p.2 y hy]⟩
 
 @[simp]
 theorem inducedMap_apply {N : Type*} {x : X} (f : C(X, Y)) (p : Ω^ N X x) (y : I^N) :
@@ -307,9 +306,8 @@ theorem inducedMap_apply {N : Type*} {x : X} (f : C(X, Y)) (p : Ω^ N X x) (y : 
 /-- `GenLoop.Homotopic` is preserved by post-composition. -/
 theorem homotopic_map (N : Type*) (x : X) (f : C(X, Y)) {p q : Ω^ N X x} (H : Homotopic p q) :
     Homotopic (inducedMap N x f p) (inducedMap N x f q) := by
-  simp only [Homotopic, inducedMap]
   have H' : (↑p : C(I^N, X)).HomotopicRel (↑q : C(I^N, X)) (Cube.boundary N) := by
-    simpa [Homotopic] using H
+    simpa
   exact ContinuousMap.HomotopicRel.comp_continuousMap H' f
 
 /-- Post-compose with identity map gives identity. -/
@@ -381,6 +379,69 @@ def inducedHom (n : ℕ) (x : X) (f : C(X, Y)) :
   map_mul' a b :=
     Quotient.inductionOn₂ a b fun p q => by
       simp [HomotopyGroup.mul_spec (i := Classical.arbitrary _), GenLoop.inducedMap_transAt]
+
+
+-- lemma continuous_preserves_homotopy {A B : Type*} [TopologicalSpace A] [TopologicalSpace B]
+--     (F : C(A, B)) {a b : A} (hab : a ≈ b) : F a ≈ F b := by
+--   -- The exact proof here depends on how `≈` is defined.
+--   -- IF `≈` is `Joined a b` (path-connected components):
+--   -- exact hab.map F.continuous
+
+--   -- IF `≈` is an explicit `Path`:
+--   -- obtain ⟨γ⟩ := hab
+--   -- exact ⟨γ.map F.continuous⟩
+
+--   -- IF `≈` is a custom `Homotopy`:
+--   -- obtain ⟨H⟩ := hab
+--   -- exact ⟨H.compRight F⟩
+--   sorry
+
+open GenLoop
+
+variable {x : X}
+
+/-- An equivalence between the indexing types `M` and `N` induces an equivalence
+between their corresponding homotopy groups. -/
+def homotopyGroupCongr {M} (e : M ≃ N) : HomotopyGroup M X x ≃ HomotopyGroup N X x where
+  toFun := Quotient.map (GenLoop.congr x e) (fun a b hab => by
+
+    have : Homotopic (GenLoop.congr x e a) (GenLoop.congr x e b) := by
+      simp [Homotopic]
+
+      sorry
+
+
+    sorry)
+  invFun := sorry
+  left_inv := sorry
+  right_inv := sorry
+
+/--
+The `M`-th homotopy group of the `N`-th iterated loop space of `X` is equivalent to
+the `(M ⊕ N)`-th homotopy group of `X`.
+
+This is the homotopy group analogue of the topological homeomorphism
+`Ω^M (Ω^N X) ≃ₜ Ω^(M ⊕ N) X`.
+-/
+def homotopyGroupSumEquiv {M} :
+    HomotopyGroup M (↑(Ω^ N X x)) const ≃ HomotopyGroup (M ⊕ N) X x :=
+  sorry
+/--
+A continuous map `f : C(X, Y)` induces a continuous map between their iterated
+loop spaces `Ω^M X x → Ω^M Y (f x)`.
+-/
+-- @[simps]
+def map {Y M} [TopologicalSpace Y] (f : C(X, Y)) : C(Ω^ M X x, Ω^ M Y (f x)) where
+  toFun p := ⟨f.comp p.1, fun y hy => by
+    rw [ContinuousMap.comp_apply f p y, p.2 y hy]⟩
+  -- fun_prop can automatically deduce continuity of composition
+  continuous_toFun := by
+    -- apply Continuous.subtype_mk
+    refine Continuous.subtype_mk ?_ _
+
+
+    sorry
+
 
 
 end HomotopyGroup
